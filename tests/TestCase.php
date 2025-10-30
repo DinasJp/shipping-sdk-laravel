@@ -2,9 +2,9 @@
 
 namespace Dinas\Shipping\Tests;
 
+use Dinas\Shipping\ShippingServiceProvider;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Orchestra\Testbench\TestCase as Orchestra;
-use Dinas\Shipping\ShippingServiceProvider;
 
 class TestCase extends Orchestra
 {

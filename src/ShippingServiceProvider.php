@@ -2,9 +2,9 @@
 
 namespace Dinas\Shipping;
 
+use Dinas\Shipping\Commands\ShippingCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use Dinas\Shipping\Commands\ShippingCommand;
 
 class ShippingServiceProvider extends PackageServiceProvider
 {
