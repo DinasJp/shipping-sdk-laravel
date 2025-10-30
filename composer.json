@@ -1,6 +1,5 @@
 {
     "name": "dinas/shipping-sdk-laravel",
-    "version": "1.0.0",
     "description": "Laravel client for Dinas Shipping API",
     "keywords": [
         "dinas-shipping",
