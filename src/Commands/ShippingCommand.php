@@ -1,12 +1,12 @@
 <?php
 
-namespace VendorName\Skeleton\Commands;
+namespace Dinas\Shipping\Commands;
 
 use Illuminate\Console\Command;
 
-class SkeletonCommand extends Command
+class ShippingCommand extends Command
 {
-    public $signature = 'skeleton';
+    public $signature = 'shipping-sdk-laravel';
 
     public $description = 'My command';
 
