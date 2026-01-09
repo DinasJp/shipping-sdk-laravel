@@ -40,16 +40,19 @@ class ShippingWebhookSetup extends Command
 
         if (empty($baseUrl)) {
             $this->error('DINAS_SHIPPING_BASE_URL is not configured in .env file');
+
             return self::FAILURE;
         }
 
         if (empty($token)) {
             $this->error('DINAS_SHIPPING_TOKEN is not configured in .env file');
+
             return self::FAILURE;
         }
 
         if (empty($secret)) {
             $this->error('DINAS_SHIPPING_SECRET is not configured in .env file');
+
             return self::FAILURE;
         }
 
@@ -64,16 +67,19 @@ class ShippingWebhookSetup extends Command
 
         if ($this->option('test')) {
             $this->line('Testing Dinas Shipping webhook...');
+
             return $this->testWebhook($name);
         }
 
         if ($this->option('toggle')) {
             $this->line('Toggling Dinas Shipping webhook...');
+
             return $this->toggleWebhook($name);
         }
 
         if ($this->option('remove')) {
             $this->line('Removing Dinas Shipping webhook...');
+
             return $this->removeWebhook($name);
         }
 
@@ -85,13 +91,14 @@ class ShippingWebhookSetup extends Command
 
     protected function storeWebhook(string $name, string $secret): int
     {
-        $this->line('Secret: ' . substr($secret, 0, 10) . '...');
+        $this->line('Secret: '.substr($secret, 0, 10).'...');
 
         $webhookUrl = $this->option('url');
 
-        if (!$webhookUrl) {
-            if (!Route::has('webhooks.dinas-shipping')) {
+        if (! $webhookUrl) {
+            if (! Route::has('webhooks.dinas-shipping')) {
                 $this->error("Webhook route wasn't found. Add Route::dinasShippingWebhooks('dinas-shipping/webhook') to your routes file");
+
                 return self::FAILURE;
             }
 
@@ -100,7 +107,7 @@ class ShippingWebhookSetup extends Command
 
         $events = $this->option('events');
         // Listen to all events if not specified
-        $events = ($events === '*' || !$events) ? ['*'] : explode(',', $events);
+        $events = ($events === '*' || ! $events) ? ['*'] : explode(',', $events);
 
         try {
             $webhook = Shipping::storeWebhook([
@@ -111,6 +118,7 @@ class ShippingWebhookSetup extends Command
             ]);
         } catch (Exception $e) {
             $this->error("Webhook '{$name}' is already created");
+
             return self::FAILURE;
         }
 
@@ -125,13 +133,15 @@ class ShippingWebhookSetup extends Command
         try {
             $hooks = Shipping::getWebhooks();
 
-            if (!count($hooks)) {
+            if (! count($hooks)) {
                 if ($this->confirm('No webhooks found. Would you like to create the first one?')) {
                     $secret = config('dinas-shipping-sdk.webhook.signing_secret');
+
                     return $this->storeWebhook('default', $secret);
                 }
 
                 $this->info('Ok ¯\_(ツ)_/¯');
+
                 return self::SUCCESS;
             }
 
@@ -142,6 +152,7 @@ class ShippingWebhookSetup extends Command
             return self::SUCCESS;
         } catch (Exception $e) {
             $this->error("Error fetching webhooks: {$e->getMessage()}");
+
             return self::FAILURE;
         }
     }
@@ -152,6 +163,7 @@ class ShippingWebhookSetup extends Command
             Shipping::testWebhook($name);
         } catch (Exception $e) {
             $this->error("Webhook '{$name}' not found");
+
             return self::FAILURE;
         }
 
@@ -166,12 +178,13 @@ class ShippingWebhookSetup extends Command
             Shipping::toggleWebhook($name);
         } catch (Exception $e) {
             $this->error("Webhook '{$name}' not found");
+
             return self::FAILURE;
         }
 
         $hook = Shipping::getWebhook($name);
 
-        $this->info("✓ Webhook '{$name}' is now " . ($hook->getIsActive() ? 'active' : 'inactive'));
+        $this->info("✓ Webhook '{$name}' is now ".($hook->getIsActive() ? 'active' : 'inactive'));
 
         return self::SUCCESS;
     }
@@ -182,6 +195,7 @@ class ShippingWebhookSetup extends Command
             Shipping::deleteWebhook($name);
         } catch (Exception $e) {
             $this->error("Webhook '{$name}' not found");
+
             return self::FAILURE;
         }
 
@@ -196,13 +210,13 @@ class ShippingWebhookSetup extends Command
     protected function displayWebhookInfo(Webhook $webhook): void
     {
         $this->newLine();
-        $this->info("Webhook Information:");
+        $this->info('Webhook Information:');
 
-        $this->line("Name: " . $webhook->getName());
-        $this->line("URL: " . $webhook->getUrl());
-        $this->line("Events: " . implode(', ', $webhook->getEvents()));
-        $this->line("Status: " . ($webhook->getIsActive() ? 'Active' : 'Inactive'));
+        $this->line('Name: '.$webhook->getName());
+        $this->line('URL: '.$webhook->getUrl());
+        $this->line('Events: '.implode(', ', $webhook->getEvents()));
+        $this->line('Status: '.($webhook->getIsActive() ? 'Active' : 'Inactive'));
         $lastUsed = $webhook->getLastDeliveryAt();
-        $this->line("Last used: " . ($lastUsed ? $lastUsed->format('Y-m-d H:i:s') : 'Never'));
+        $this->line('Last used: '.($lastUsed ? $lastUsed->format('Y-m-d H:i:s') : 'Never'));
     }
 }
