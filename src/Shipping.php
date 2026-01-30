@@ -347,7 +347,7 @@ class Shipping
     /**
      * Get a specific voyage by identifier.
      */
-    public function getVoyage(string $voyage): mixed
+    public function getVoyage(int $voyage): mixed
     {
         return $this->voyages()->getVoyage($voyage);
     }

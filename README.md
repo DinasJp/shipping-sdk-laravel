@@ -261,7 +261,7 @@ $voyages = Shipping::getVoyages([
 ]);
 
 // Get a specific voyage
-$voyage = Shipping::getVoyage('VES0001PORT');
+$voyage = Shipping::getVoyage(123);
 ```
 
 ### Direct API Access

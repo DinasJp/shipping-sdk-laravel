@@ -37,7 +37,7 @@ use Psr\Http\Client\ClientInterface;
  * @method static mixed storeCarDocuments(array $documents)
  * @method static mixed storeCarDocumentFiles(array $documents)
  * @method static mixed getVoyages(array $params = [])
- * @method static mixed getVoyage(string $voyage)
+ * @method static mixed getVoyage(int $voyage)
  * @method static array getWebhooks()
  * @method static Webhook getWebhook(string $name)
  * @method static Webhook storeWebhook(Webhook|array $data)

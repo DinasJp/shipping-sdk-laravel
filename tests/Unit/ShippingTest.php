@@ -454,16 +454,16 @@ describe('Voyages API Methods', function () {
 
         $voyagesApi->shouldReceive('getVoyage')
             ->once()
-            ->with('VES001')
-            ->andReturn(['id' => 'VES001']);
+            ->with(12345)
+            ->andReturn(['id' => 12345]);
 
         $reflection = new ReflectionClass($shipping);
         $property = $reflection->getProperty('voyagesApi');
         $property->setAccessible(true);
         $property->setValue($shipping, $voyagesApi);
 
-        $result = $shipping->getVoyage('VES001');
+        $result = $shipping->getVoyage(12345);
 
-        expect($result)->toBe(['id' => 'VES001']);
+        expect($result)->toBe(['id' => 12345]);
     });
 });
