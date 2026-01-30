@@ -20,13 +20,13 @@ beforeEach(function () {
 
 describe('Shipping Class Initialization', function () {
     it('can be instantiated', function () {
-        $shipping = new Shipping();
+        $shipping = new Shipping;
 
         expect($shipping)->toBeInstanceOf(Shipping::class);
     });
 
     it('initializes with config values', function () {
-        $shipping = new Shipping();
+        $shipping = new Shipping;
         $config = $shipping->getConfiguration();
 
         expect($config)->toBeInstanceOf(Configuration::class)
@@ -50,13 +50,13 @@ describe('Shipping Class Initialization', function () {
     });
 
     it('returns http client instance', function () {
-        $shipping = new Shipping();
+        $shipping = new Shipping;
 
         expect($shipping->getHttpClient())->toBeInstanceOf(ClientInterface::class);
     });
 
     it('can set custom http client', function () {
-        $shipping = new Shipping();
+        $shipping = new Shipping;
         $customClient = Mockery::mock(ClientInterface::class);
 
         $result = $shipping->setHttpClient($customClient);
@@ -68,13 +68,13 @@ describe('Shipping Class Initialization', function () {
 
 describe('API Instances', function () {
     it('returns CarsApi instance', function () {
-        $shipping = new Shipping();
+        $shipping = new Shipping;
 
         expect($shipping->cars())->toBeInstanceOf(CarsApi::class);
     });
 
     it('returns same CarsApi instance on multiple calls', function () {
-        $shipping = new Shipping();
+        $shipping = new Shipping;
         $api1 = $shipping->cars();
         $api2 = $shipping->cars();
 
@@ -82,31 +82,31 @@ describe('API Instances', function () {
     });
 
     it('returns CarPhotosApi instance', function () {
-        $shipping = new Shipping();
+        $shipping = new Shipping;
 
         expect($shipping->carPhotos())->toBeInstanceOf(CarPhotosApi::class);
     });
 
     it('returns CarDocumentsApi instance', function () {
-        $shipping = new Shipping();
+        $shipping = new Shipping;
 
         expect($shipping->carDocuments())->toBeInstanceOf(CarDocumentsApi::class);
     });
 
     it('returns VoyagesApi instance', function () {
-        $shipping = new Shipping();
+        $shipping = new Shipping;
 
         expect($shipping->voyages())->toBeInstanceOf(VoyagesApi::class);
     });
 
     it('returns WebhooksApi instance', function () {
-        $shipping = new Shipping();
+        $shipping = new Shipping;
 
         expect($shipping->webhooks())->toBeInstanceOf(WebhooksApi::class);
     });
 
     it('resets API instances when http client is changed', function () {
-        $shipping = new Shipping();
+        $shipping = new Shipping;
         $api1 = $shipping->cars();
 
         $customClient = Mockery::mock(ClientInterface::class);
@@ -120,7 +120,7 @@ describe('API Instances', function () {
 
 describe('Cars API Methods', function () {
     it('calls getCars with correct parameters', function () {
-        $shipping = new Shipping();
+        $shipping = new Shipping;
         $carsApi = Mockery::mock(CarsApi::class);
 
         $carsApi->shouldReceive('getCars')
@@ -169,7 +169,7 @@ describe('Cars API Methods', function () {
     });
 
     it('calls syncCars with car data', function () {
-        $shipping = new Shipping();
+        $shipping = new Shipping;
         $carsApi = Mockery::mock(CarsApi::class);
 
         $carData = [
@@ -193,7 +193,7 @@ describe('Cars API Methods', function () {
     });
 
     it('calls holdCars with items and ship date limit', function () {
-        $shipping = new Shipping();
+        $shipping = new Shipping;
         $carsApi = Mockery::mock(CarsApi::class);
 
         $carsApi->shouldReceive('holdCars')
@@ -214,7 +214,7 @@ describe('Cars API Methods', function () {
     });
 
     it('calls holdCars without ship date limit', function () {
-        $shipping = new Shipping();
+        $shipping = new Shipping;
         $carsApi = Mockery::mock(CarsApi::class);
 
         $carsApi->shouldReceive('holdCars')
@@ -232,7 +232,7 @@ describe('Cars API Methods', function () {
     });
 
     it('calls releaseCars with items', function () {
-        $shipping = new Shipping();
+        $shipping = new Shipping;
         $carsApi = Mockery::mock(CarsApi::class);
 
         $carsApi->shouldReceive('releaseCars')
@@ -250,7 +250,7 @@ describe('Cars API Methods', function () {
     });
 
     it('calls withholdCars with reason', function () {
-        $shipping = new Shipping();
+        $shipping = new Shipping;
         $carsApi = Mockery::mock(CarsApi::class);
 
         $carsApi->shouldReceive('withholdCars')
@@ -268,7 +268,7 @@ describe('Cars API Methods', function () {
     });
 
     it('calls grantCars with items', function () {
-        $shipping = new Shipping();
+        $shipping = new Shipping;
         $carsApi = Mockery::mock(CarsApi::class);
 
         $carsApi->shouldReceive('grantCars')
@@ -286,7 +286,7 @@ describe('Cars API Methods', function () {
     });
 
     it('calls setYardEta with items', function () {
-        $shipping = new Shipping();
+        $shipping = new Shipping;
         $carsApi = Mockery::mock(CarsApi::class);
 
         $carsApi->shouldReceive('setYardEta')
@@ -309,7 +309,7 @@ describe('Cars API Methods', function () {
 
 describe('Photos API Methods', function () {
     it('calls getCarPhotos with parameters', function () {
-        $shipping = new Shipping();
+        $shipping = new Shipping;
         $photosApi = Mockery::mock(CarPhotosApi::class);
 
         $photosApi->shouldReceive('getCarPhotos')
@@ -330,7 +330,7 @@ describe('Photos API Methods', function () {
     });
 
     it('calls storeCarPhotos with photo data', function () {
-        $shipping = new Shipping();
+        $shipping = new Shipping;
         $photosApi = Mockery::mock(CarPhotosApi::class);
 
         $photoData = [
@@ -353,7 +353,7 @@ describe('Photos API Methods', function () {
     });
 
     it('calls storeCarPhotoFiles with file data', function () {
-        $shipping = new Shipping();
+        $shipping = new Shipping;
         $photosApi = Mockery::mock(CarPhotosApi::class);
 
         $fileData = [
@@ -378,7 +378,7 @@ describe('Photos API Methods', function () {
 
 describe('Documents API Methods', function () {
     it('calls storeCarDocuments with document data', function () {
-        $shipping = new Shipping();
+        $shipping = new Shipping;
         $docsApi = Mockery::mock(CarDocumentsApi::class);
 
         $docData = [
@@ -401,7 +401,7 @@ describe('Documents API Methods', function () {
     });
 
     it('calls storeCarDocumentFiles with file data', function () {
-        $shipping = new Shipping();
+        $shipping = new Shipping;
         $docsApi = Mockery::mock(CarDocumentsApi::class);
 
         $fileData = [
@@ -426,7 +426,7 @@ describe('Documents API Methods', function () {
 
 describe('Voyages API Methods', function () {
     it('calls getVoyages with parameters', function () {
-        $shipping = new Shipping();
+        $shipping = new Shipping;
         $voyagesApi = Mockery::mock(VoyagesApi::class);
 
         $voyagesApi->shouldReceive('getVoyages')
@@ -449,7 +449,7 @@ describe('Voyages API Methods', function () {
     });
 
     it('calls getVoyage with voyage identifier', function () {
-        $shipping = new Shipping();
+        $shipping = new Shipping;
         $voyagesApi = Mockery::mock(VoyagesApi::class);
 
         $voyagesApi->shouldReceive('getVoyage')
