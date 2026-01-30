@@ -1,12 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Dinas\Shipping;
 
+use Dinas\ShippingSdk\Api\CarDocumentsApi;
+use Dinas\ShippingSdk\Api\CarPhotosApi;
 use Dinas\ShippingSdk\Api\CarsApi;
 use Dinas\ShippingSdk\Api\VoyagesApi;
 use Dinas\ShippingSdk\Api\WebhooksApi;
 use Dinas\ShippingSdk\Configuration;
+use Dinas\ShippingSdk\Model\GrantCarsRequest;
+use Dinas\ShippingSdk\Model\HoldCarsRequest;
+use Dinas\ShippingSdk\Model\ReleaseCarsRequest;
+use Dinas\ShippingSdk\Model\SetYardEtaRequest;
 use Dinas\ShippingSdk\Model\Webhook;
+use Dinas\ShippingSdk\Model\WithholdCarsRequest;
 use GuzzleHttp\Client;
 use Psr\Http\Client\ClientInterface;
 
@@ -17,6 +26,10 @@ class Shipping
     protected ClientInterface $httpClient;
 
     protected ?CarsApi $carsApi = null;
+
+    protected ?CarPhotosApi $carPhotosApi = null;
+
+    protected ?CarDocumentsApi $carDocumentsApi = null;
 
     protected ?VoyagesApi $voyagesApi = null;
 
@@ -64,6 +77,8 @@ class Shipping
 
         // Reset API instances to use new client
         $this->carsApi = null;
+        $this->carPhotosApi = null;
+        $this->carDocumentsApi = null;
         $this->voyagesApi = null;
         $this->webhooksApi = null;
 
@@ -80,6 +95,30 @@ class Shipping
         }
 
         return $this->carsApi;
+    }
+
+    /**
+     * Get the Car Photos API instance.
+     */
+    public function carPhotos(): CarPhotosApi
+    {
+        if ($this->carPhotosApi === null) {
+            $this->carPhotosApi = new CarPhotosApi($this->httpClient, $this->configuration);
+        }
+
+        return $this->carPhotosApi;
+    }
+
+    /**
+     * Get the Car Documents API instance.
+     */
+    public function carDocuments(): CarDocumentsApi
+    {
+        if ($this->carDocumentsApi === null) {
+            $this->carDocumentsApi = new CarDocumentsApi($this->httpClient, $this->configuration);
+        }
+
+        return $this->carDocumentsApi;
     }
 
     /**
@@ -119,9 +158,14 @@ class Shipping
      *                                        - status: Filter by car status
      *                                        - chassis: Filter by chassis number (multiple values separated by spaces)
      *                                        - search: Search by partial chassis, make, model
+     *                                        - port_code: Filter by port code
      *                                        - voyage: Filter by voyage
+     *                                        - vehicle_state: Filter by vehicle state
+     *                                        - vehicle_type: Filter by vehicle type
      *                                        - photos: Filter by photos presence
+     *                                        - docs: Filter by documents presence
      *                                        - on_yard: Filter by yard presence
+     *                                        - price_terms: Filter by price terms
      *                                        - sort: Sort field. Prefix with - for descending. default: -id
      *                                        - per_page: Number of items per page. default: 100
      *                                        - page: Page number. default: 1
@@ -132,9 +176,14 @@ class Shipping
             $params['status'] ?? null,
             $params['chassis'] ?? null,
             $params['search'] ?? null,
+            $params['port_code'] ?? null,
             $params['voyage'] ?? null,
+            $params['vehicle_state'] ?? null,
+            $params['vehicle_type'] ?? null,
             $params['photos'] ?? null,
+            $params['docs'] ?? null,
             $params['on_yard'] ?? null,
+            $params['price_terms'] ?? null,
             $params['sort'] ?? null,
             $params['per_page'] ?? null,
             $params['page'] ?? null,
@@ -144,11 +193,11 @@ class Shipping
     /**
      * Get car photos.
      *
-     * @param  array<string, mixed>  $params  Optional query parameters (same as getCars)
+     * @param  array<string, mixed>  $params  Optional query parameters
      */
     public function getCarPhotos(array $params = []): mixed
     {
-        return $this->cars()->getCarPhotos(
+        return $this->carPhotos()->getCarPhotos(
             $params['status'] ?? null,
             $params['chassis'] ?? null,
             $params['search'] ?? null,
@@ -172,32 +221,107 @@ class Shipping
     }
 
     /**
-     * Store car photos.
+     * Hold cars from shipping.
      *
-     * @param  array<int, mixed>  $photos  Array of photo data
+     * @param  array<int, string>  $items  Array of chassis numbers
+     * @param  array<string, mixed>|null  $shipDateLimit  Optional ship date limit with 'date' and 'after' keys
      */
-    public function storeCarPhotos(array $photos): mixed
+    public function holdCars(array $items, ?array $shipDateLimit = null): mixed
     {
-        return $this->cars()->storeCarPhotos($photos);
+        $data = ['items' => $items];
+
+        if ($shipDateLimit !== null) {
+            $data['ship_date_limit'] = $shipDateLimit;
+        }
+
+        return $this->cars()->holdCars(new HoldCarsRequest($data));
     }
 
     /**
-     * Store car documents.
+     * Release cars for shipping.
+     *
+     * @param  array<int, string>  $items  Array of chassis numbers
+     */
+    public function releaseCars(array $items): mixed
+    {
+        return $this->cars()->releaseCars(new ReleaseCarsRequest(['items' => $items]));
+    }
+
+    /**
+     * Withhold cars upon arrival.
+     *
+     * @param  array<int, string>  $items  Array of chassis numbers
+     * @param  string|null  $reason  Optional reason for withholding
+     */
+    public function withholdCars(array $items, ?string $reason = null): mixed
+    {
+        $data = ['items' => $items];
+
+        if ($reason !== null) {
+            $data['reason'] = $reason;
+        }
+
+        return $this->cars()->withholdCars(new WithholdCarsRequest($data));
+    }
+
+    /**
+     * Grant cars (clear withhold status).
+     *
+     * @param  array<int, string>  $items  Array of chassis numbers
+     */
+    public function grantCars(array $items): mixed
+    {
+        return $this->cars()->grantCars(new GrantCarsRequest(['items' => $items]));
+    }
+
+    /**
+     * Set yard ETA for cars.
+     *
+     * @param  array<int, array<string, string>>  $items  Array of items with 'chassis' and 'eta' keys (e.g., [['chassis' => 'ABC123', 'eta' => '2026-02-15'], ['chassis' => 'DEF456', 'eta' => '2026-02-16']])
+     */
+    public function setYardEta(array $items): mixed
+    {
+        return $this->cars()->setYardEta(new SetYardEtaRequest(['items' => $items]));
+    }
+
+    /**
+     * Store car photos from URLs.
+     *
+     * @param  array<int, mixed>  $photos  Array of photo data with chassis, album, and urls
+     */
+    public function storeCarPhotos(array $photos): mixed
+    {
+        return $this->carPhotos()->storeCarPhotoUrls($photos);
+    }
+
+    /**
+     * Store car photos from files.
+     *
+     * @param  array<int, mixed>  $photos  Array of photo files with chassis and album
+     */
+    public function storeCarPhotoFiles(array $photos): mixed
+    {
+        return $this->carPhotos()->storeCarPhotoFiles($photos);
+    }
+
+    /**
+     * Store car documents from URLs.
      *
      * @param  array<int, mixed>  $documents  Array of document data
      */
     public function storeCarDocuments(array $documents): mixed
     {
-        if (empty($documents)) {
-            return [];
-        }
+        return $this->carDocuments()->storeCarDocumentUrls($documents);
+    }
 
-        $responses = [];
-        foreach (array_chunk($documents, 20) as $chunk) {
-            $responses[] = $this->cars()->storeCarDocuments($chunk);
-        }
-
-        return array_last($responses);
+    /**
+     * Store car documents from files.
+     *
+     * @param  array<int, mixed>  $documents  Array of document files
+     */
+    public function storeCarDocumentFiles(array $documents): mixed
+    {
+        return $this->carDocuments()->storeCarDocumentFiles($documents);
     }
 
     /*

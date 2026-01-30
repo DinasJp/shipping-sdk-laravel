@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Dinas\Shipping\Commands;
 
 use Dinas\Shipping\Facades\Shipping;

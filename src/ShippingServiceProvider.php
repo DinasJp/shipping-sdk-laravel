@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Dinas\Shipping;
 
 use Dinas\Shipping\Commands\ShippingWebhookSetup;

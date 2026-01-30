@@ -100,38 +100,153 @@ php artisan vendor:publish --tag="shipping-sdk-laravel-config"
 
 ## Usage
 
-### Using the Facade
+### Cars API
 
 ```php
 use Dinas\Shipping\Facades\Shipping;
 
-// Get pending cars 
-$cars = Shipping::getCars([
-    'status' => 'pending',
-]);
-
-// Get cars with optional filters
+// Get cars with filters
 $cars = Shipping::getCars([
     'status' => 'pending',
     'search' => 'Toyota',
-    'per_page' => 50,
+    'port_code' => 'JPYOK',
+    'voyage' => 'VES0001PORT',
+    'vehicle_state' => 'used',
+    'vehicle_type' => 'sedan',
+    'photos' => true,  // Only cars with photos
+    'docs' => true,    // Only cars with documents
+    'on_yard' => true, // Only cars on yard
+    'price_terms' => 'fob',
+    'sort' => '-id',
+    'per_page' => 100,
     'page' => 1,
 ]);
 
-// Get car photos
-$photos = Shipping::getCarPhotos(['voyage' => 'VES0001PORT']);
-
-// Sync cars
+// Sync cars (create or update)
 $result = Shipping::syncCars([
-    ['chassis' => 'ABC123', 'make' => 'Toyota', 'model' => 'Camry'],
-    ['chassis' => 'DEF456', 'make' => 'Honda', 'model' => 'Civic'],
+    [
+        'chassis' => 'ABC123',
+        'make' => 'Toyota',
+        'model' => 'Camry',
+        'year' => 2020,
+        'color' => 'White',
+        // ... other car fields
+    ],
+    [
+        'chassis' => 'DEF456',
+        'make' => 'Honda',
+        'model' => 'Civic',
+        // ... other car fields
+    ],
 ]);
 
-// Store car photos
-Shipping::storeCarPhotos($photoData);
+// Hold cars from shipping
+Shipping::holdCars(['ABC123', 'DEF456'], [
+    'date' => '2026-03-15',
+    'after' => true, // true = after date, false = before date
+]);
 
-// Store car documents
-Shipping::storeCarDocuments($documentData);
+// Hold without date limit
+Shipping::holdCars(['ABC123', 'DEF456']);
+
+// Release cars for shipping
+Shipping::releaseCars(['ABC123', 'DEF456']);
+
+// Withhold cars upon arrival
+Shipping::withholdCars(['ABC123'], 'Payment pending');
+
+// Withhold without reason
+Shipping::withholdCars(['ABC123']);
+
+// Grant cars (clear withhold status)
+Shipping::grantCars(['ABC123']);
+
+// Set yard ETA for cars
+Shipping::setYardEta([
+    ['chassis' => 'ABC123', 'eta' => '2026-02-15'],
+    ['chassis' => 'DEF456', 'eta' => '2026-02-16'],
+]);
+```
+
+### Photos API
+
+```php
+use Dinas\Shipping\Facades\Shipping;
+
+// Get car photos with filters
+$photos = Shipping::getCarPhotos([
+    'chassis' => 'ABC123',
+    'voyage' => 'VES0001PORT',
+    'status' => 'pending',
+    'photos' => true,
+    'per_page' => 100,
+]);
+
+// Store car photos from URLs
+Shipping::storeCarPhotos([
+    [
+        'chassis' => 'ABC123',
+        'album' => \Dinas\ShippingSdk\Model\AlbumType::YARD_CARGO,
+        'urls' => [
+            'https://example.com/photo1.jpg',
+            'https://example.com/photo2.jpg',
+        ],
+    ],
+    [
+        'chassis' => 'DEF456',
+        'album' => 'interior',
+        'urls' => [
+            'https://example.com/photo3.jpg',
+        ],
+    ],
+]);
+
+// Store car photos from files
+Shipping::storeCarPhotoFiles([
+    [
+        'chassis' => 'ABC123',
+        'album' => \Dinas\ShippingSdk\Model\AlbumType::YARD_NOTE,
+        'files' => [
+            // File objects or paths
+        ],
+    ],
+]);
+```
+
+### Documents API
+
+```php
+use Dinas\Shipping\Facades\Shipping;
+
+// Store car documents from URLs
+Shipping::storeCarDocuments([
+    [
+        'chassis' => 'ABC123',
+        'type' => \Dinas\ShippingSdk\Model\DocumentType::EXPORT_CERTIFICATE,
+        'url' => 'https://example.com/invoice.pdf',
+        'valid_until' => '2027-01-30', // optional
+    ],
+    [
+        'chassis' => 'ABC123',
+        'type' => \Dinas\ShippingSdk\Model\DocumentType::VEHICLE_INVOICE,
+        'url' => 'https://example.com/cert.pdf',
+    ],
+    [
+        'chassis' => 'DEF456',
+        'type' => \Dinas\ShippingSdk\Model\DocumentType::EXPORT_CERTIFICATE,
+        'url' => 'https://example.com/title.pdf',
+    ],
+]);
+
+// Store car documents from files
+Shipping::storeCarDocumentFiles([
+    [
+        'chassis' => 'ABC123',
+        'type' => \Dinas\ShippingSdk\Model\DocumentType::EXPORT_CERTIFICATE,
+        'file' => $uploadedFile,
+        'valid_until' => '2027-01-30',
+    ],
+]);
 ```
 
 ### Voyages API
@@ -159,6 +274,14 @@ use Dinas\Shipping\Facades\Shipping;
 // Access Cars API directly
 $carsApi = Shipping::cars();
 $result = $carsApi->getCars(status: 'pending', perPage: 100);
+
+// Access Car Photos API directly
+$photosApi = Shipping::carPhotos();
+$photos = $photosApi->getCarPhotos(chassis: 'ABC123');
+
+// Access Car Documents API directly
+$docsApi = Shipping::carDocuments();
+$docsApi->storeCarDocumentUrls($documentData);
 
 // Access Voyages API directly
 $voyagesApi = Shipping::voyages();
