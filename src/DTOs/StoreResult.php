@@ -10,7 +10,7 @@ readonly class StoreResult
      * @param  bool  $ok  Whether all chunks succeeded without API exceptions
      * @param  array<int, string>  $jobIds  Job IDs from API responses
      * @param  array<int, array{chassis?: string, error?: string}>  $errors  Structured errors from API responses (car not found, etc.)
-     * @param  array<int, array<string, mixed>>  $validationErrors  Validation errors from API (keyed by field)
+     * @param  array<int|string, array<string, mixed>|string>  $validationErrors  Validation errors from API (keyed by field)
      * @param  array<int, mixed>  $responses  Raw API responses per chunk
      */
     public function __construct(
@@ -50,12 +50,12 @@ readonly class StoreResult
         }
 
         foreach ($this->validationErrors as $field => $fieldErrors) {
-            if (is_array($fieldErrors)) {
+            if (is_string($fieldErrors)) {
+                $messages[] = $fieldErrors;
+            } else {
                 foreach ($fieldErrors as $fieldError) {
                     $messages[] = is_string($field) ? "[$field] $fieldError" : (string) $fieldError;
                 }
-            } else {
-                $messages[] = (string) $fieldErrors;
             }
         }
 
