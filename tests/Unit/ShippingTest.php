@@ -1,5 +1,6 @@
 <?php
 
+use Dinas\Shipping\DTOs\StoreResult;
 use Dinas\Shipping\Shipping;
 use Dinas\ShippingSdk\Api\CarDocumentsApi;
 use Dinas\ShippingSdk\Api\CarPhotosApi;
@@ -349,7 +350,8 @@ describe('Photos API Methods', function () {
 
         $result = $shipping->storeCarPhotos($photoData);
 
-        expect($result)->toBe(['success' => true]);
+        expect($result)->toBeInstanceOf(StoreResult::class)
+            ->and($result->ok)->toBeTrue();
     });
 
     it('calls storeCarPhotoFiles with file data', function () {
@@ -372,7 +374,8 @@ describe('Photos API Methods', function () {
 
         $result = $shipping->storeCarPhotoFiles($fileData);
 
-        expect($result)->toBe(['success' => true]);
+        expect($result)->toBeInstanceOf(StoreResult::class)
+            ->and($result->ok)->toBeTrue();
     });
 });
 
@@ -397,7 +400,8 @@ describe('Documents API Methods', function () {
 
         $result = $shipping->storeCarDocuments($docData);
 
-        expect($result)->toBe(['success' => true]);
+        expect($result)->toBeInstanceOf(StoreResult::class)
+            ->and($result->ok)->toBeTrue();
     });
 
     it('calls storeCarDocumentFiles with file data', function () {
@@ -420,7 +424,8 @@ describe('Documents API Methods', function () {
 
         $result = $shipping->storeCarDocumentFiles($fileData);
 
-        expect($result)->toBe(['success' => true]);
+        expect($result)->toBeInstanceOf(StoreResult::class)
+            ->and($result->ok)->toBeTrue();
     });
 });
 

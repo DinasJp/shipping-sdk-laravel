@@ -24,7 +24,12 @@ class ShippingServiceProvider extends PackageServiceProvider
             ->hasConfigFile([
                 'dinas-shipping-sdk',
             ])
-            ->hasCommand(ShippingWebhookSetup::class);
+            ->hasCommands([
+                ShippingWebhookSetup::class,
+            ])
+            ->hasMigrations([
+                'create_webhook_jobs_table'
+            ]);
     }
 
     public function packageRegistered(): void

@@ -65,6 +65,7 @@ Next, publish the webhook migration and run it:
 
 ```bash
 php artisan vendor:publish --provider="Spatie\WebhookClient\WebhookClientServiceProvider" --tag="webhook-client-migrations"
+php artisan vendor:publish --tag="shipping-sdk-laravel-migrations"
 php artisan migrate
 ```
 
@@ -107,16 +108,16 @@ use Dinas\Shipping\Facades\Shipping;
 
 // Get cars with filters
 $cars = Shipping::getCars([
-    'status' => 'pending',
+    'status' => \Dinas\ShippingSdk\Model\StockStatus::PENDING,
     'search' => 'Toyota',
-    'port_code' => 'JPYOK',
+    'port_code' => 'OSA',
     'voyage' => 'VES0001PORT',
-    'vehicle_state' => 'used',
-    'vehicle_type' => 'sedan',
+    'vehicle_state' => 'dis', // whole, unknown, dmg
+    'vehicle_type' => \Dinas\ShippingSdk\Model\VehicleType::TRACTOR,
     'photos' => true,  // Only cars with photos
     'docs' => true,    // Only cars with documents
     'on_yard' => true, // Only cars on yard
-    'price_terms' => 'fob',
+    'price_terms' => \Dinas\ShippingSdk\Model\PriceTerms::FOB,
     'sort' => '-id',
     'per_page' => 100,
     'page' => 1,
@@ -178,12 +179,14 @@ $photos = Shipping::getCarPhotos([
     'chassis' => 'ABC123',
     'voyage' => 'VES0001PORT',
     'status' => 'pending',
-    'photos' => true,
+    'photos' => true, // false - for list without photo uploaded yet
     'per_page' => 100,
 ]);
 
 // Store car photos from URLs
-Shipping::storeCarPhotos([
+// Data is automatically chunked (default: 50 items per chunk, configurable).
+// Returns a StoreResult with structured errors and job IDs.
+$result = Shipping::storeCarPhotos([
     [
         'chassis' => 'ABC123',
         'album' => \Dinas\ShippingSdk\Model\AlbumType::YARD_CARGO,
@@ -194,15 +197,34 @@ Shipping::storeCarPhotos([
     ],
     [
         'chassis' => 'DEF456',
-        'album' => 'interior',
+        'album' => 'auction',
         'urls' => [
             'https://example.com/photo3.jpg',
         ],
     ],
 ]);
 
+// Check results
+if (!$result->ok) {
+    // Validation errors (422) as structured arrays
+    foreach ($result->validationErrors as $field => $messages) {
+        // e.g. ['0.chassis' => ['The chassis field is required.']]
+    }
+}
+
+// API-level errors (e.g. "Car not found") as arrays
+foreach ($result->errors as $error) {
+    echo $error['chassis'] . ': ' . $error['error'];
+}
+
+// All error messages as a flat array of strings
+$messages = $result->allErrorMessages();
+
+// Job IDs returned from the API
+$jobIds = $result->jobIds;
+
 // Store car photos from files
-Shipping::storeCarPhotoFiles([
+$result = Shipping::storeCarPhotoFiles([
     [
         'chassis' => 'ABC123',
         'album' => \Dinas\ShippingSdk\Model\AlbumType::YARD_NOTE,
@@ -219,17 +241,17 @@ Shipping::storeCarPhotoFiles([
 use Dinas\Shipping\Facades\Shipping;
 
 // Store car documents from URLs
-Shipping::storeCarDocuments([
+$result = Shipping::storeCarDocuments([
     [
         'chassis' => 'ABC123',
         'type' => \Dinas\ShippingSdk\Model\DocumentType::EXPORT_CERTIFICATE,
-        'url' => 'https://example.com/invoice.pdf',
-        'valid_until' => '2027-01-30', // optional
+        'url' => 'https://example.com/cert-tohon.pdf',
+        'valid_until' => '2027-01-30', // optional, but recommended for better tracking of document validity
     ],
     [
         'chassis' => 'ABC123',
         'type' => \Dinas\ShippingSdk\Model\DocumentType::VEHICLE_INVOICE,
-        'url' => 'https://example.com/cert.pdf',
+        'url' => 'https://example.com/invoice.pdf',
     ],
     [
         'chassis' => 'DEF456',
@@ -239,7 +261,7 @@ Shipping::storeCarDocuments([
 ]);
 
 // Store car documents from files
-Shipping::storeCarDocumentFiles([
+$result = Shipping::storeCarDocumentFiles([
     [
         'chassis' => 'ABC123',
         'type' => \Dinas\ShippingSdk\Model\DocumentType::EXPORT_CERTIFICATE,
@@ -247,6 +269,107 @@ Shipping::storeCarDocumentFiles([
         'valid_until' => '2027-01-30',
     ],
 ]);
+```
+
+### Async Job Callbacks (`onResolve`)
+
+When the API processes your photos/documents asynchronously, it returns a `jobId` and later sends a webhook
+(`api.job` event) when the job is complete. You can register a callback that will be automatically executed
+when that webhook arrives:
+
+```php
+use Dinas\Shipping\Facades\Shipping;
+use Dinas\Shipping\DTOs\WebhookJobContext;
+
+$result = Shipping::storeCarDocuments($documents, onResolve: function (WebhookJobContext $context) {
+    // This runs automatically when the API job finishes and the webhook is received.
+    // $context->jobId    — API job ID
+    // $context->userId   — User who initiated the request
+    // $context->method   — 'storeCarDocuments'
+    // $context->status   — 'finished' or 'failed'
+    // $context->message  — Optional message from API (can be null)
+    // $context->errors   — Errors from the initial API response
+
+    if ($context->isFailed()) {
+        Log::warning("Job {$context->jobId} failed: {$context->message}");
+    }
+
+    // Notify user, update records, etc.
+});
+
+// You can also use any callable:
+$result = Shipping::storeCarPhotos($photos, onResolve: [MyService::class, 'handleResult']);
+$result = Shipping::storeCarPhotos($photos, onResolve: 'my_handler_function');
+```
+
+The callback is serialized and stored in the `webhook_jobs` table. When the webhook arrives,
+the callback is deserialized and executed exactly once (duplicate webhooks are ignored via status tracking).
+The `user_id` of the authenticated user at the time of the call is captured and passed to the callback context.
+
+### Broadcasting (Pusher)
+
+When a webhook resolves a job, a `ShippingJobResolved` event will be broadcast on a private user's channel
+to notify the frontend in real-time. This is opt-out.
+
+Disable in your `.env`:
+
+```dotenv
+DINAS_SHIPPING_BROADCASTING=false
+```
+
+Or in `config/dinas-shipping-sdk.php`:
+
+```php
+'broadcasting' => [
+    'enabled' => true,
+],
+```
+
+Listen on the frontend (e.g. Laravel Echo + Pusher):
+
+```javascript
+Echo.private(`App.Models.User.${userId}`)
+    .listen('.shipping.job.resolved', (e) => {
+        console.log(e.jobId, e.method, e.status, e.message, e.errors);
+    });
+```
+
+The broadcast payload contains: `jobId`, `method`, `status`, `message`, `errors`.
+
+
+### Deleting models
+
+Whenever you call async method, this package will store callback as a `WebhookJob` model. After a while, you might want
+to delete old models.
+
+The `WebhookJob` model has [Laravel's MassPrunable trait](https://laravel.com/docs/master/eloquent#pruning-models)
+applied on it. You can customize the cutoff date in the config file.
+
+In this example all models will be deleted when older than 30 days.
+
+```php
+return [
+    'webhook_jobs' => [
+        'delete_after_days' => 30,
+    ],
+];
+```
+
+After configuring the model, you should schedule the `model:prune` Artisan command in your
+application's `routes/console.php`. Don't forget to explicitly mention the `WebhookJob` class.
+You are free to choose the appropriate interval at which this command should be run:
+
+```php
+use Illuminate\Support\Facades\Schedule;
+use Dinas\Shipping\Models\WebhookJob;
+use Spatie\WebhookClient\Models\WebhookCall;
+
+Schedule::command('model:prune', [
+    '--model' => [WebhookJob::class, WebhookCall::class],
+])->daily();
+
+// This will not work, as models in a package are not used by default
+// Schedule::command('model:prune')->daily();
 ```
 
 ### Voyages API

@@ -51,6 +51,27 @@ return [
     */
     'debug' => env('DINAS_SHIPPING_DEBUG', false),
 
+    'webhook_jobs' => [
+        /*
+         * The integer amount of days after which models should be deleted.
+         *
+         * It deletes all records after 30 days. Set to null if no models should be deleted.
+         */
+        'delete_after_days' => 30,
+
+        /*
+         * When enabled, a ShippingJobResolved event will be broadcast on a private
+         * channel when an API job completes via webhook. This allows real-time
+         * notifications in the frontend. Requires Laravel Broadcasting to be
+         * configured (e.g. with Pusher).
+         *
+         * Channel format: App.Models.User.{userId}
+         */
+        'broadcasting' => [
+            'enabled' => env('DINAS_SHIPPING_BROADCASTING', true),
+        ],
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Webhooks

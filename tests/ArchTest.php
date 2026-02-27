@@ -36,10 +36,13 @@ arch('main shipping class has proper dependencies')
     ->expect('Dinas\Shipping\Shipping')
     ->toOnlyUse([
         'Dinas\ShippingSdk',
+        'Dinas\Shipping',
         'GuzzleHttp',
         'Psr\Http\Client',
+        'Laravel\SerializableClosure',
         'Illuminate\Support', // for config() helper
         'config', // Laravel helper function
+        'auth',
     ]);
 
 arch('namespace follows PSR-4')

@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace Dinas\Shipping;
 
+use Closure;
+use Dinas\Shipping\DTOs\StoreResult;
+use Dinas\Shipping\Models\WebhookJob;
 use Dinas\ShippingSdk\Api\CarDocumentsApi;
 use Dinas\ShippingSdk\Api\CarPhotosApi;
 use Dinas\ShippingSdk\Api\CarsApi;
 use Dinas\ShippingSdk\Api\VoyagesApi;
 use Dinas\ShippingSdk\Api\WebhooksApi;
+use Dinas\ShippingSdk\ApiException;
 use Dinas\ShippingSdk\Configuration;
 use Dinas\ShippingSdk\Model\GrantCarsRequest;
 use Dinas\ShippingSdk\Model\HoldCarsRequest;
@@ -17,6 +21,7 @@ use Dinas\ShippingSdk\Model\SetYardEtaRequest;
 use Dinas\ShippingSdk\Model\Webhook;
 use Dinas\ShippingSdk\Model\WithholdCarsRequest;
 use GuzzleHttp\Client;
+use Laravel\SerializableClosure\SerializableClosure;
 use Psr\Http\Client\ClientInterface;
 
 class Shipping
@@ -288,40 +293,168 @@ class Shipping
      * Store car photos from URLs.
      *
      * @param  array<int, mixed>  $photos  Array of photo data with chassis, album, and urls
+     * @param  callable|null  $onResolve  Callback to execute when API job completes via webhook. Receives WebhookJobContext.
      */
-    public function storeCarPhotos(array $photos): mixed
+    public function storeCarPhotos(array $photos, ?callable $onResolve = null): StoreResult
     {
-        return $this->carPhotos()->storeCarPhotoUrls($photos);
+        return $this->executeChunked(
+            $photos,
+            'storeCarPhotos',
+            fn (array $chunk) => $this->carPhotos()->storeCarPhotoUrls($chunk),
+            $onResolve,
+        );
     }
 
     /**
      * Store car photos from files.
      *
      * @param  array<int, mixed>  $photos  Array of photo files with chassis and album
+     * @param  callable|null  $onResolve  Callback to execute when API job completes via webhook. Receives WebhookJobContext.
      */
-    public function storeCarPhotoFiles(array $photos): mixed
+    public function storeCarPhotoFiles(array $photos, ?callable $onResolve = null): StoreResult
     {
-        return $this->carPhotos()->storeCarPhotoFiles($photos);
+        return $this->executeChunked(
+            $photos,
+            'storeCarPhotoFiles',
+            fn (array $chunk) => $this->carPhotos()->storeCarPhotoFiles($chunk),
+            $onResolve,
+        );
     }
 
     /**
      * Store car documents from URLs.
      *
      * @param  array<int, mixed>  $documents  Array of document data
+     * @param  callable|null  $onResolve  Callback to execute when API job completes via webhook. Receives WebhookJobContext.
      */
-    public function storeCarDocuments(array $documents): mixed
+    public function storeCarDocuments(array $documents, ?callable $onResolve = null): StoreResult
     {
-        return $this->carDocuments()->storeCarDocumentUrls($documents);
+        return $this->executeChunked(
+            $documents,
+            'storeCarDocuments',
+            fn (array $chunk) => $this->carDocuments()->storeCarDocumentUrls($chunk),
+            $onResolve,
+        );
     }
 
     /**
      * Store car documents from files.
      *
      * @param  array<int, mixed>  $documents  Array of document files
+     * @param  callable|null  $onResolve  Callback to execute when API job completes via webhook. Receives WebhookJobContext.
      */
-    public function storeCarDocumentFiles(array $documents): mixed
+    public function storeCarDocumentFiles(array $documents, ?callable $onResolve = null): StoreResult
     {
-        return $this->carDocuments()->storeCarDocumentFiles($documents);
+        return $this->executeChunked(
+            $documents,
+            'storeCarDocumentFiles',
+            fn (array $chunk) => $this->carDocuments()->storeCarDocumentFiles($chunk),
+            $onResolve,
+        );
+    }
+
+    /**
+     * Execute an API call in chunks with error aggregation and optional onResolve callback.
+     *
+     * @param  array<int, mixed>  $items
+     * @param  Closure(array): mixed  $apiCall
+     */
+    protected function executeChunked(
+        array $items,
+        string $method,
+        Closure $apiCall,
+        ?callable $onResolve = null,
+    ): StoreResult {
+        $jobIds = [];
+        $errors = [];
+        $validationErrors = [];
+        $responses = [];
+        $ok = true;
+
+        $chunks = array_chunk($items, 100);
+
+        foreach ($chunks as $chunk) {
+            try {
+                $response = $apiCall($chunk);
+                $responses[] = $response;
+
+                $decoded = $this->decodeResponse($response);
+
+                if (isset($decoded['jobId'])) {
+                    $jobIds[] = $decoded['jobId'];
+                }
+
+                if (! empty($decoded['errors'])) {
+                    $errors = array_merge($errors, $decoded['errors']);
+                }
+            } catch (ApiException $e) {
+                $ok = false;
+                $body = $this->decodeResponse($e->getResponseBody());
+
+                if ($e->getCode() === 422 && isset($body['errors'])) {
+                    $validationErrors = array_merge_recursive($validationErrors, $body['errors']);
+                } elseif (isset($body['message'])) {
+                    $errors[] = ['chassis' => null, 'error' => $body['message']];
+                } else {
+                    $errors[] = ['chassis' => null, 'error' => $e->getMessage()];
+                }
+
+                $responses[] = $body;
+            }
+        }
+
+        if ($onResolve !== null && ! empty($jobIds)) {
+            $closure = $onResolve instanceof Closure
+                ? $onResolve
+                : function () use ($onResolve) { return ($onResolve)(...func_get_args()); };
+            $serialized = serialize(new SerializableClosure($closure));
+            $userId = auth()->id();
+
+            foreach ($jobIds as $jobId) {
+                WebhookJob::create([
+                    'job_id' => $jobId,
+                    'user_id' => $userId,
+                    'method' => $method,
+                    'callable' => $serialized,
+                    'errors' => $errors ?: null,
+                    'status' => WebhookJob::STATUS_PENDING,
+                ]);
+            }
+        }
+
+        return new StoreResult(
+            ok: $ok,
+            jobIds: $jobIds,
+            errors: $errors,
+            validationErrors: $validationErrors,
+            responses: $responses,
+        );
+    }
+
+    /**
+     * Decode an API response to an array.
+     */
+    protected function decodeResponse(mixed $response): array
+    {
+        if (is_array($response)) {
+            return $response;
+        }
+
+        if (is_object($response) && method_exists($response, 'toArray')) {
+            return $response->toArray();
+        }
+
+        if (is_object($response) && method_exists($response, 'jsonSerialize')) {
+            return (array) $response->jsonSerialize();
+        }
+
+        if (is_string($response)) {
+            $decoded = json_decode($response, true);
+
+            return is_array($decoded) ? $decoded : [];
+        }
+
+        return [];
     }
 
     /*

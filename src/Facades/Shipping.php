@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dinas\Shipping\Facades;
 
+use Dinas\Shipping\DTOs\StoreResult;
 use Dinas\ShippingSdk\Api\CarDocumentsApi;
 use Dinas\ShippingSdk\Api\CarPhotosApi;
 use Dinas\ShippingSdk\Api\CarsApi;
@@ -32,10 +33,10 @@ use Psr\Http\Client\ClientInterface;
  * @method static mixed withholdCars(array $items, ?string $reason = null)
  * @method static mixed grantCars(array $items)
  * @method static mixed setYardEta(array $items)
- * @method static mixed storeCarPhotos(array $photos)
- * @method static mixed storeCarPhotoFiles(array $photos)
- * @method static mixed storeCarDocuments(array $documents)
- * @method static mixed storeCarDocumentFiles(array $documents)
+ * @method static StoreResult storeCarPhotos(array $photos, ?callable $onResolve = null)
+ * @method static StoreResult storeCarPhotoFiles(array $photos, ?callable $onResolve = null)
+ * @method static StoreResult storeCarDocuments(array $documents, ?callable $onResolve = null)
+ * @method static StoreResult storeCarDocumentFiles(array $documents, ?callable $onResolve = null)
  * @method static mixed getVoyages(array $params = [])
  * @method static mixed getVoyage(int $voyage)
  * @method static array getWebhooks()
