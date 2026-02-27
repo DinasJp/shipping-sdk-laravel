@@ -16,23 +16,21 @@ class ShippingJobResolved implements ShouldBroadcast
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     /**
-     * @param string $jobId The API job ID
-     * @param int|null $userId The user who initiated the request
-     * @param string $method The method that was called
-     * @param string $status Job status: 'finished' or 'failed'
-     * @param string|null $message Optional message from the API
-     * @param array<int, array{chassis?: string, error?: string}> $errors Errors from initial response
+     * @param  string  $jobId  The API job ID
+     * @param  int|null  $userId  The user who initiated the request
+     * @param  string  $method  The method that was called
+     * @param  string  $status  Job status: 'finished' or 'failed'
+     * @param  string|null  $message  Optional message from the API
+     * @param  array<int, array{chassis?: string, error?: string}>  $errors  Errors from initial response
      */
     public function __construct(
-        public string  $jobId,
-        public ?int    $userId,
-        public string  $method,
-        public string  $status,
+        public string $jobId,
+        public ?int $userId,
+        public string $method,
+        public string $status,
         public ?string $message,
-        public array   $errors = [],
-    )
-    {
-    }
+        public array $errors = [],
+    ) {}
 
     /**
      * @return array<int, Channel>

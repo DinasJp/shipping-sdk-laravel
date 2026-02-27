@@ -406,7 +406,9 @@ class Shipping
         if ($onResolve !== null && ! empty($jobIds)) {
             $closure = $onResolve instanceof Closure
                 ? $onResolve
-                : function () use ($onResolve) { return ($onResolve)(...func_get_args()); };
+                : function () use ($onResolve) {
+                    return ($onResolve)(...func_get_args());
+                };
             $serialized = serialize(new SerializableClosure($closure));
             $userId = auth()->id();
 

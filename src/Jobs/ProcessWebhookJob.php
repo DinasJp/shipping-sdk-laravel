@@ -27,7 +27,7 @@ class ProcessWebhookJob extends BaseProcessWebhookJob
      */
     public function handle(): void
     {
-        if (!isset($this->webhookCall->payload['event']) || $this->webhookCall->payload['event'] === '') {
+        if (! isset($this->webhookCall->payload['event']) || $this->webhookCall->payload['event'] === '') {
             throw WebhookFailed::missingType($this->webhookCall);
         }
 
@@ -35,8 +35,9 @@ class ProcessWebhookJob extends BaseProcessWebhookJob
 
         event("dinas-shipping::$type", $this->webhookCall);
 
-        if ($type === 'api.job')
+        if ($type === 'api.job') {
             $this->resolveWebhookJob();
+        }
 
         collect(config('dinas-shipping-sdk.webhook.jobs'))
             ->filter(function (string $jobClassName, $eventActionName) use ($type) {
@@ -47,11 +48,11 @@ class ProcessWebhookJob extends BaseProcessWebhookJob
                 return $eventActionName === $type;
             })
             ->each(function (string $jobClassName) {
-                if (!class_exists($jobClassName)) {
+                if (! class_exists($jobClassName)) {
                     throw WebhookFailed::jobClassDoesNotExist($jobClassName, $this->webhookCall);
                 }
             })
-            ->each(fn(string $jobClassName) => dispatch(new $jobClassName($this->webhookCall)));
+            ->each(fn (string $jobClassName) => dispatch(new $jobClassName($this->webhookCall)));
     }
 
     protected function resolveWebhookJob(): void
@@ -59,15 +60,17 @@ class ProcessWebhookJob extends BaseProcessWebhookJob
         $payload = $this->webhookCall->payload;
         $jobId = $payload['jobId'] ?? null;
 
-        if (!$jobId)
+        if (! $jobId) {
             return;
+        }
 
         $webhookJobs = WebhookJob::forJob($jobId)->pending()->get();
 
         foreach ($webhookJobs as $webhookJob) {
             /** @var WebhookJob $webhookJob */
-            if (!$webhookJob->claim())
+            if (! $webhookJob->claim()) {
                 continue;
+            }
 
             try {
                 $webhookJob->update(['payload' => $payload]);

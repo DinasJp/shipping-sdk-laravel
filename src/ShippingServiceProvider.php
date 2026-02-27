@@ -28,7 +28,7 @@ class ShippingServiceProvider extends PackageServiceProvider
                 ShippingWebhookSetup::class,
             ])
             ->hasMigrations([
-                'create_webhook_jobs_table'
+                'create_webhook_jobs_table',
             ]);
     }
 

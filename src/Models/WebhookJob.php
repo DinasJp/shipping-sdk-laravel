@@ -56,7 +56,7 @@ class WebhookJob extends Model
     }
 
     /**
-     * @param Builder<self> $query
+     * @param  Builder<self>  $query
      * @return Builder<self>
      */
     public function scopePending(Builder $query): Builder
@@ -65,7 +65,7 @@ class WebhookJob extends Model
     }
 
     /**
-     * @param Builder<self> $query
+     * @param  Builder<self>  $query
      * @return Builder<self>
      */
     public function scopeCompleted(Builder $query): Builder
@@ -74,7 +74,7 @@ class WebhookJob extends Model
     }
 
     /**
-     * @param Builder<self> $query
+     * @param  Builder<self>  $query
      * @return Builder<self>
      */
     public function scopeForJob(Builder $query, string $jobId): Builder
@@ -88,10 +88,10 @@ class WebhookJob extends Model
     public function claim(): bool
     {
         return self::where('id', $this->id)
-                ->where('status', self::STATUS_PENDING)
-                ->update([
-                    'status' => self::STATUS_PROCESSING,
-                ]) > 0;
+            ->where('status', self::STATUS_PENDING)
+            ->update([
+                'status' => self::STATUS_PROCESSING,
+            ]) > 0;
     }
 
     public function markCompleted(): void
@@ -117,7 +117,7 @@ class WebhookJob extends Model
     {
         $days = config('dinas-shipping-sdk.webhook_jobs.delete_after_days');
 
-        if (!is_int($days)) {
+        if (! is_int($days)) {
             throw InvalidConfig::invalidPrunable($days);
         }
 
