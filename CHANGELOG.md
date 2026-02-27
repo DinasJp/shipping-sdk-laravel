@@ -2,6 +2,12 @@
 
 All notable changes to `shipping-sdk-laravel` will be documented in this file.
 
+## v1.2.0 - 2026-02-27
+
+Added async callbacks via webhooks
+
+**Full Changelog**: https://github.com/DinasJp/shipping-sdk-laravel/compare/v1.1.0...v1.2.0
+
 ## v1.1.0 - 2026-01-30
 
 ### What's Changed
