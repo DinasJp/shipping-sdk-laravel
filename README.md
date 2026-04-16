@@ -123,6 +123,19 @@ $cars = Shipping::getCars([
     'page' => 1,
 ]);
 
+// Access paginated cars
+$carList  = $cars->getData();  // CarModel[]
+
+// Access full Voyage resources included in the response (keyed by voyage ID)
+$voyages = $cars->getVoyages(); // array<string, \Dinas\ShippingSdk\Model\Voyage>
+foreach ($voyages as $voyageId => $voyage) {
+    echo $voyage->getName(); // full Voyage object
+}
+
+// Look up the voyage for a specific car
+$car = $carList[0];
+$voyage = $voyages[$car->getVoyageId()] ?? null;
+
 // Sync cars (create or update)
 $result = Shipping::syncCars([
     [

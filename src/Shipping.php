@@ -14,6 +14,7 @@ use Dinas\ShippingSdk\Api\VoyagesApi;
 use Dinas\ShippingSdk\Api\WebhooksApi;
 use Dinas\ShippingSdk\ApiException;
 use Dinas\ShippingSdk\Configuration;
+use Dinas\ShippingSdk\Model\CarsPaginated;
 use Dinas\ShippingSdk\Model\GrantCarsRequest;
 use Dinas\ShippingSdk\Model\HoldCarsRequest;
 use Dinas\ShippingSdk\Model\ReleaseCarsRequest;
@@ -174,8 +175,10 @@ class Shipping
      *                                        - sort: Sort field. Prefix with - for descending. default: -id
      *                                        - per_page: Number of items per page. default: 100
      *                                        - page: Page number. default: 1
+     * @return CarsPaginated  Paginated cars list. Includes $result->getVoyages() — full Voyage resources
+     *                        keyed by voyage ID for every car on this page.
      */
-    public function getCars(array $params = []): mixed
+    public function getCars(array $params = []): CarsPaginated
     {
         return $this->cars()->getCars(
             $params['status'] ?? null,
