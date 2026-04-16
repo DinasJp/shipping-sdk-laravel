@@ -8,6 +8,7 @@ use Dinas\ShippingSdk\Api\CarsApi;
 use Dinas\ShippingSdk\Api\VoyagesApi;
 use Dinas\ShippingSdk\Api\WebhooksApi;
 use Dinas\ShippingSdk\Configuration;
+use Dinas\ShippingSdk\Model\CarsPaginated;
 use Psr\Http\Client\ClientInterface;
 
 beforeEach(function () {
@@ -124,6 +125,10 @@ describe('Cars API Methods', function () {
         $shipping = new Shipping;
         $carsApi = Mockery::mock(CarsApi::class);
 
+        $carsPaginated = Mockery::mock(CarsPaginated::class);
+        $carsPaginated->shouldReceive('getData')->andReturn([]);
+        $carsPaginated->shouldReceive('getVoyages')->andReturn([]);
+
         $carsApi->shouldReceive('getCars')
             ->once()
             ->with(
@@ -142,7 +147,7 @@ describe('Cars API Methods', function () {
                 50,
                 1
             )
-            ->andReturn(['data' => []]);
+            ->andReturn($carsPaginated);
 
         $reflection = new ReflectionClass($shipping);
         $property = $reflection->getProperty('carsApi');
