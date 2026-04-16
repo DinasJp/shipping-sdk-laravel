@@ -1,5 +1,9 @@
 <?php
 
+use Dinas\Shipping\Jobs\ProcessWebhookJob;
+use Spatie\WebhookClient\Models\WebhookCall;
+use Spatie\WebhookClient\WebhookProfile\ProcessEverythingWebhookProfile;
+
 return [
     /*
     |--------------------------------------------------------------------------
@@ -87,19 +91,19 @@ return [
         /*
          * This class determines if the webhook call should be stored and processed.
          */
-        'profile' => \Spatie\WebhookClient\WebhookProfile\ProcessEverythingWebhookProfile::class,
+        'profile' => ProcessEverythingWebhookProfile::class,
 
         /*
          * The classname of the model to be used to store webhook calls. The class should
          * be equal or extend Spatie\WebhookClient\Models\WebhookCall.
          */
-        'model' => \Spatie\WebhookClient\Models\WebhookCall::class,
+        'model' => WebhookCall::class,
 
         /*
          * Current job dispatches new jobs listed in next configuration based on event type.
          * You can re-define this to process all events in one place
          */
-        'default_job' => \Dinas\Shipping\Jobs\ProcessWebhookJob::class,
+        'default_job' => ProcessWebhookJob::class,
 
         /*
          * You can define the job that should be run when a certain webhook hits your application

@@ -10,6 +10,8 @@ use Dinas\Shipping\Models\WebhookJob;
 use Dinas\Shipping\Shipping;
 use Dinas\ShippingSdk\Api\CarDocumentsApi;
 use Dinas\ShippingSdk\Api\CarPhotosApi;
+use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Foundation\Auth\User;
 use Illuminate\Support\Facades\Event;
 use Spatie\WebhookClient\Models\WebhookCall;
 
@@ -182,7 +184,7 @@ describe('executeChunked via storeCarPhotos', function () {
 
     it('stores WebhookJob with static class method callback', function () {
         // Fake an authenticated user
-        $user = new \Illuminate\Foundation\Auth\User;
+        $user = new User;
         $user->id = 42;
         $this->actingAs($user);
 
@@ -270,7 +272,7 @@ describe('executeChunked via storeCarDocuments', function () {
     });
 
     it('stores WebhookJob with static class method callback', function () {
-        $user = new \Illuminate\Foundation\Auth\User;
+        $user = new User;
         $user->id = 99;
         $this->actingAs($user);
 
@@ -399,7 +401,7 @@ describe('executeChunked with failed webhook', function () {
 describe('ShippingJobResolved broadcasting', function () {
 
     it('dispatches ShippingJobResolved event after webhook processing', function () {
-        $user = new \Illuminate\Foundation\Auth\User;
+        $user = new User;
         $user->id = 7;
         $this->actingAs($user);
 
@@ -425,7 +427,7 @@ describe('ShippingJobResolved broadcasting', function () {
     });
 
     it('dispatches ShippingJobResolved event for documents', function () {
-        $user = new \Illuminate\Foundation\Auth\User;
+        $user = new User;
         $user->id = 13;
         $this->actingAs($user);
 
@@ -472,7 +474,7 @@ describe('ShippingJobResolved broadcasting', function () {
     });
 
     it('includes errors in the broadcast event', function () {
-        $user = new \Illuminate\Foundation\Auth\User;
+        $user = new User;
         $user->id = 20;
         $this->actingAs($user);
 
@@ -515,7 +517,7 @@ describe('ShippingJobResolved broadcasting', function () {
         $channels = $event->broadcastOn();
 
         expect($channels)->toHaveCount(1)
-            ->and($channels[0])->toBeInstanceOf(\Illuminate\Broadcasting\PrivateChannel::class)
+            ->and($channels[0])->toBeInstanceOf(PrivateChannel::class)
             ->and($channels[0]->name)->toBe('private-App.Models.User.42');
     });
 

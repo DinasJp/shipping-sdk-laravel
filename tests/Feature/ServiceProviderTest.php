@@ -2,6 +2,11 @@
 
 use Dinas\Shipping\Facades\Shipping as ShippingFacade;
 use Dinas\Shipping\Shipping;
+use Dinas\ShippingSdk\Api\CarDocumentsApi;
+use Dinas\ShippingSdk\Api\CarPhotosApi;
+use Dinas\ShippingSdk\Api\CarsApi;
+use Dinas\ShippingSdk\Api\VoyagesApi;
+use Dinas\ShippingSdk\Api\WebhooksApi;
 
 describe('Service Provider', function () {
     it('registers shipping singleton in container', function () {
@@ -30,10 +35,10 @@ describe('Facade Methods', function () {
     });
 
     it('can access all API instances through facade', function () {
-        expect(ShippingFacade::cars())->toBeInstanceOf(\Dinas\ShippingSdk\Api\CarsApi::class)
-            ->and(ShippingFacade::carPhotos())->toBeInstanceOf(\Dinas\ShippingSdk\Api\CarPhotosApi::class)
-            ->and(ShippingFacade::carDocuments())->toBeInstanceOf(\Dinas\ShippingSdk\Api\CarDocumentsApi::class)
-            ->and(ShippingFacade::voyages())->toBeInstanceOf(\Dinas\ShippingSdk\Api\VoyagesApi::class)
-            ->and(ShippingFacade::webhooks())->toBeInstanceOf(\Dinas\ShippingSdk\Api\WebhooksApi::class);
+        expect(ShippingFacade::cars())->toBeInstanceOf(CarsApi::class)
+            ->and(ShippingFacade::carPhotos())->toBeInstanceOf(CarPhotosApi::class)
+            ->and(ShippingFacade::carDocuments())->toBeInstanceOf(CarDocumentsApi::class)
+            ->and(ShippingFacade::voyages())->toBeInstanceOf(VoyagesApi::class)
+            ->and(ShippingFacade::webhooks())->toBeInstanceOf(WebhooksApi::class);
     });
 });

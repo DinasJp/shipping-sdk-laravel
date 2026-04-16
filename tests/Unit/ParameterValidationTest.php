@@ -1,6 +1,13 @@
 <?php
 
 use Dinas\Shipping\Shipping;
+use Dinas\ShippingSdk\Api\CarDocumentsApi;
+use Dinas\ShippingSdk\Api\CarPhotosApi;
+use Dinas\ShippingSdk\Api\CarsApi;
+use Dinas\ShippingSdk\Api\VoyagesApi;
+use Dinas\ShippingSdk\Api\WebhooksApi;
+use Dinas\ShippingSdk\Configuration;
+use Psr\Http\Client\ClientInterface;
 
 describe('Parameter Validation', function () {
     it('holdCars accepts valid items array', function () {
@@ -85,19 +92,19 @@ describe('Return Types', function () {
         $shipping = new Shipping;
 
         expect($shipping->getConfiguration())
-            ->toBeInstanceOf(\Dinas\ShippingSdk\Configuration::class);
+            ->toBeInstanceOf(Configuration::class);
     });
 
     it('getHttpClient returns ClientInterface instance', function () {
         $shipping = new Shipping;
 
         expect($shipping->getHttpClient())
-            ->toBeInstanceOf(\Psr\Http\Client\ClientInterface::class);
+            ->toBeInstanceOf(ClientInterface::class);
     });
 
     it('setHttpClient returns self', function () {
         $shipping = new Shipping;
-        $client = Mockery::mock(\Psr\Http\Client\ClientInterface::class);
+        $client = Mockery::mock(ClientInterface::class);
 
         $result = $shipping->setHttpClient($client);
 
@@ -108,34 +115,34 @@ describe('Return Types', function () {
         $shipping = new Shipping;
 
         expect($shipping->cars())
-            ->toBeInstanceOf(\Dinas\ShippingSdk\Api\CarsApi::class);
+            ->toBeInstanceOf(CarsApi::class);
     });
 
     it('carPhotos returns CarPhotosApi instance', function () {
         $shipping = new Shipping;
 
         expect($shipping->carPhotos())
-            ->toBeInstanceOf(\Dinas\ShippingSdk\Api\CarPhotosApi::class);
+            ->toBeInstanceOf(CarPhotosApi::class);
     });
 
     it('carDocuments returns CarDocumentsApi instance', function () {
         $shipping = new Shipping;
 
         expect($shipping->carDocuments())
-            ->toBeInstanceOf(\Dinas\ShippingSdk\Api\CarDocumentsApi::class);
+            ->toBeInstanceOf(CarDocumentsApi::class);
     });
 
     it('voyages returns VoyagesApi instance', function () {
         $shipping = new Shipping;
 
         expect($shipping->voyages())
-            ->toBeInstanceOf(\Dinas\ShippingSdk\Api\VoyagesApi::class);
+            ->toBeInstanceOf(VoyagesApi::class);
     });
 
     it('webhooks returns WebhooksApi instance', function () {
         $shipping = new Shipping;
 
         expect($shipping->webhooks())
-            ->toBeInstanceOf(\Dinas\ShippingSdk\Api\WebhooksApi::class);
+            ->toBeInstanceOf(WebhooksApi::class);
     });
 });

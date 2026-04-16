@@ -14,6 +14,7 @@ use Dinas\ShippingSdk\Api\VoyagesApi;
 use Dinas\ShippingSdk\Api\WebhooksApi;
 use Dinas\ShippingSdk\ApiException;
 use Dinas\ShippingSdk\Configuration;
+use Dinas\ShippingSdk\Model\ActionResponse;
 use Dinas\ShippingSdk\Model\CarsPaginated;
 use Dinas\ShippingSdk\Model\GrantCarsRequest;
 use Dinas\ShippingSdk\Model\HoldCarsRequest;
@@ -175,8 +176,8 @@ class Shipping
      *                                        - sort: Sort field. Prefix with - for descending. default: -id
      *                                        - per_page: Number of items per page. default: 100
      *                                        - page: Page number. default: 1
-     * @return CarsPaginated  Paginated cars list. Includes $result->getVoyages() — full Voyage resources
-     *                        keyed by voyage ID for every car on this page.
+     * @return CarsPaginated Paginated cars list. Includes $result->getVoyages() — full Voyage resources
+     *                       keyed by voyage ID for every car on this page.
      */
     public function getCars(array $params = []): CarsPaginated
     {
@@ -543,7 +544,7 @@ class Shipping
     /**
      * Delete a webhook.
      */
-    public function deleteWebhook(string $name): \Dinas\ShippingSdk\Model\ActionResponse
+    public function deleteWebhook(string $name): ActionResponse
     {
         return $this->webhooks()->deleteWebhook($name);
     }
@@ -551,7 +552,7 @@ class Shipping
     /**
      * Toggle the active status of a webhook.
      */
-    public function toggleWebhook(string $name): \Dinas\ShippingSdk\Model\ActionResponse
+    public function toggleWebhook(string $name): ActionResponse
     {
         return $this->webhooks()->toggleWebhook($name);
     }
@@ -559,7 +560,7 @@ class Shipping
     /**
      * Send a test payload to the webhook.
      */
-    public function testWebhook(string $name): \Dinas\ShippingSdk\Model\ActionResponse
+    public function testWebhook(string $name): ActionResponse
     {
         return $this->webhooks()->testWebhook($name);
     }
