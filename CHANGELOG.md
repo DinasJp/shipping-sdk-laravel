@@ -2,6 +2,10 @@
 
 All notable changes to `shipping-sdk-laravel` will be documented in this file.
 
+## v1.3.1 - 2026-05-13
+
+Bump deps
+
 ## Deduplicated voyage data in getCars - 2026-04-16
 
 **Full Changelog**: https://github.com/DinasJp/shipping-sdk-laravel/compare/v1.2.0...v1.3.0
