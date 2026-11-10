@@ -13,7 +13,7 @@ readonly class WebhookJobContext
      * @param  string  $status  Job status: 'finished' or 'failed'
      * @param  string|null  $message  Optional message from the API
      * @param  array<int, array{chassis?: string, error?: string}>  $errors  Errors from initial API response
-     * @param  array<string, mixed>  $webhookPayload  Full webhook payload
+     * @param  array<string, mixed>  $webhookPayload  Event data of the webhook (its "data" part)
      */
     public function __construct(
         public string $jobId,

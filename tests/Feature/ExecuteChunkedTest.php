@@ -60,16 +60,23 @@ function mockDocsApi(string $jobId = 'job-doc-1'): CarDocumentsApi
 /**
  * Simulate the webhook arrival for an api.job event and run the ProcessWebhookJob synchronously.
  */
-function simulateWebhook(string $jobId, string $status = 'finished', ?string $message = null): void
+function simulateWebhook(string $jobId, string $status = 'finished', ?string $message = null, array $extra = []): void
 {
     $webhookCall = WebhookCall::create([
         'name' => 'dinas-shipping',
         'url' => 'https://localhost/dinas-shipping/webhook',
+        // as shipping's WebhookService sends it: the event fields sit under 'data'
         'payload' => [
             'event' => 'api.job',
-            'jobId' => $jobId,
-            'status' => $status,
-            'message' => $message,
+            'timestamp' => now()->toISOString(),
+            'user_id' => 1,
+            'data' => [
+                'jobId' => $jobId,
+                'name' => 'Upload car photos',
+                'status' => $status,
+                'message' => $message,
+                ...$extra,
+            ],
         ],
     ]);
 
@@ -422,7 +429,8 @@ describe('executeChunked with failed webhook', function () {
         );
 
         Event::fake([ShippingJobResolved::class]);
-        simulateWebhook('job-fail', 'failed', 'Processing error');
+        // shipping reports a failed batch with 'error', not 'message'
+        simulateWebhook('job-fail', 'failed', extra: ['error' => 'Processing error']);
 
         $cached = cache()->get('fail_job-fail');
         expect($cached)->not->toBeNull()

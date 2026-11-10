@@ -57,7 +57,8 @@ class ProcessWebhookJob extends BaseProcessWebhookJob
 
     protected function resolveWebhookJob(): void
     {
-        $payload = $this->webhookCall->payload;
+        // shipping sends the event fields under 'data'
+        $payload = $this->webhookCall->payload['data'] ?? [];
         $jobId = $payload['jobId'] ?? null;
 
         if (! $jobId) {
@@ -85,7 +86,7 @@ class ProcessWebhookJob extends BaseProcessWebhookJob
                         userId: $webhookJob->user_id,
                         method: $webhookJob->method,
                         status: $payload['status'] ?? 'unknown',
-                        message: $payload['message'] ?? null,
+                        message: $payload['message'] ?? $payload['error'] ?? null,
                         errors: $webhookJob->errors ?? [],
                         webhookPayload: $payload,
                     );
@@ -107,7 +108,7 @@ class ProcessWebhookJob extends BaseProcessWebhookJob
                 userId: $webhookJob->user_id,
                 method: $webhookJob->method,
                 status: $payload['status'] ?? 'unknown',
-                message: $payload['message'] ?? null,
+                message: $payload['message'] ?? $payload['error'] ?? null,
                 errors: $webhookJob->errors ?? [],
             ));
         }
