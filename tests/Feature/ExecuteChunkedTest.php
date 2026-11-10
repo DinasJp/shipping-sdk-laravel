@@ -365,6 +365,43 @@ describe('executeChunked chunking behavior', function () {
     });
 });
 
+describe('executeChunked webhook timing', function () {
+
+    it('runs the callback of a chunk whose webhook comes while later chunks still upload', function () {
+        $items = [];
+        for ($i = 0; $i < 150; $i++) {
+            $items[] = ['chassis' => "EARLY$i", 'album' => 'exterior', 'urls' => ["https://img.test/$i.jpg"]];
+        }
+
+        Event::fake([ShippingJobResolved::class]);
+
+        $chunkIndex = 0;
+        $api = Mockery::mock(CarPhotosApi::class);
+        $api->shouldReceive('storeCarPhotoUrls')
+            ->twice()
+            ->andReturnUsing(function () use (&$chunkIndex) {
+                $chunkIndex++;
+
+                if ($chunkIndex === 2) {
+                    simulateWebhook('job-early-1'); // the first job is done before the second chunk is answered
+                }
+
+                return json_encode([
+                    'jobId' => "job-early-$chunkIndex",
+                    'errors' => [['chassis' => "EARLY$chunkIndex", 'error' => 'Car not found']],
+                ]);
+            });
+
+        createShippingWithMockedPhotosApi($api)->storeCarPhotos($items, onResolve: function (WebhookJobContext $ctx) {
+            cache()->put("early_{$ctx->jobId}", $ctx->errors, 60);
+        });
+
+        expect(cache()->get('early_job-early-1'))->toBe([['chassis' => 'EARLY1', 'error' => 'Car not found']])
+            ->and(WebhookJob::forJob('job-early-1')->value('status'))->toBe(WebhookJob::STATUS_COMPLETED)
+            ->and(WebhookJob::forJob('job-early-2')->value('status'))->toBe(WebhookJob::STATUS_PENDING);
+    });
+});
+
 // ---------------------------------------------------------------------------
 // Tests: failed webhook status
 // ---------------------------------------------------------------------------

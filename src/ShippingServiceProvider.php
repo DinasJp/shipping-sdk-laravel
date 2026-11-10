@@ -34,14 +34,8 @@ class ShippingServiceProvider extends PackageServiceProvider
 
     public function packageRegistered(): void
     {
-        $this->app->singleton(Shipping::class, function ($app) {
-            return new Shipping(
-                config('dinas-shipping-sdk.token'),
-                config('dinas-shipping-sdk.base_url'),
-                config('dinas-shipping-sdk.timeout'),
-                config('dinas-shipping-sdk.debug', false),
-            );
-        });
+        // the constructor reads the config itself, where env() strings like a timeout of "60" pass its int/bool types
+        $this->app->singleton(Shipping::class, fn () => new Shipping);
 
         $this->app->alias(Shipping::class, 'dinas-shipping');
     }

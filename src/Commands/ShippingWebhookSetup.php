@@ -119,7 +119,7 @@ class ShippingWebhookSetup extends Command
                 'events' => $events,
             ]);
         } catch (Exception $e) {
-            $this->error("Webhook '{$name}' is already created");
+            $this->error("Could not add webhook '{$name}': {$e->getMessage()}");
 
             return self::FAILURE;
         }
@@ -164,7 +164,7 @@ class ShippingWebhookSetup extends Command
         try {
             Shipping::testWebhook($name);
         } catch (Exception $e) {
-            $this->error("Webhook '{$name}' not found");
+            $this->error("Could not test webhook '{$name}': {$e->getMessage()}");
 
             return self::FAILURE;
         }
@@ -179,7 +179,7 @@ class ShippingWebhookSetup extends Command
         try {
             Shipping::toggleWebhook($name);
         } catch (Exception $e) {
-            $this->error("Webhook '{$name}' not found");
+            $this->error("Could not toggle webhook '{$name}': {$e->getMessage()}");
 
             return self::FAILURE;
         }
@@ -196,7 +196,7 @@ class ShippingWebhookSetup extends Command
         try {
             Shipping::deleteWebhook($name);
         } catch (Exception $e) {
-            $this->error("Webhook '{$name}' not found");
+            $this->error("Could not remove webhook '{$name}': {$e->getMessage()}");
 
             return self::FAILURE;
         }

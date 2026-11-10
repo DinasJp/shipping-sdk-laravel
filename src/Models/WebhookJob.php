@@ -117,10 +117,15 @@ class WebhookJob extends Model
     {
         $days = config('dinas-shipping-sdk.webhook_jobs.delete_after_days');
 
+        if ($days === null) {
+            return static::whereRaw('1 = 0');
+        }
+
         if (! is_int($days)) {
             throw InvalidConfig::invalidPrunable($days);
         }
 
-        return static::where('resolved_at', '<', now()->subDays($days));
+        // by creation, so jobs whose webhook never came go too
+        return static::where('created_at', '<', now()->subDays($days));
     }
 }

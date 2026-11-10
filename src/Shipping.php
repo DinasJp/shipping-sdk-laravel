@@ -49,7 +49,8 @@ class Shipping
         $timeout = $timeout ?? config('dinas-shipping-sdk.timeout');
         $debug = $debug || config('dinas-shipping-sdk.debug');
 
-        $this->configuration = Configuration::getDefaultConfiguration()
+        // own instance: the SDK default one is shared by every client in the process
+        $this->configuration = (new Configuration)
             ->setAccessToken($accessToken)
             ->setHost($baseUrl)
             ->setDebug($debug);
@@ -181,21 +182,22 @@ class Shipping
      */
     public function getCars(array $params = []): CarsPaginated
     {
+        // named, as the generated client's parameter order changes between releases
         return $this->cars()->getCars(
-            $params['status'] ?? null,
-            $params['chassis'] ?? null,
-            $params['search'] ?? null,
-            $params['port_code'] ?? null,
-            $params['voyage'] ?? null,
-            $params['vehicle_state'] ?? null,
-            $params['vehicle_type'] ?? null,
-            $params['photos'] ?? null,
-            $params['docs'] ?? null,
-            $params['on_yard'] ?? null,
-            $params['price_terms'] ?? null,
-            $params['sort'] ?? null,
-            $params['per_page'] ?? null,
-            $params['page'] ?? null,
+            status: $params['status'] ?? null,
+            chassis: $params['chassis'] ?? null,
+            search: $params['search'] ?? null,
+            port_code: $params['port_code'] ?? null,
+            voyage: $params['voyage'] ?? null,
+            vehicle_state: $params['vehicle_state'] ?? null,
+            vehicle_type: $params['vehicle_type'] ?? null,
+            photos: $params['photos'] ?? null,
+            docs: $params['docs'] ?? null,
+            on_yard: $params['on_yard'] ?? null,
+            price_terms: $params['price_terms'] ?? null,
+            sort: $params['sort'] ?? null,
+            per_page: $params['per_page'] ?? null,
+            page: $params['page'] ?? null,
         );
     }
 
@@ -207,15 +209,15 @@ class Shipping
     public function getCarPhotos(array $params = []): mixed
     {
         return $this->carPhotos()->getCarPhotos(
-            $params['status'] ?? null,
-            $params['chassis'] ?? null,
-            $params['search'] ?? null,
-            $params['voyage'] ?? null,
-            $params['photos'] ?? null,
-            $params['on_yard'] ?? null,
-            $params['sort'] ?? null,
-            $params['per_page'] ?? null,
-            $params['page'] ?? null,
+            status: $params['status'] ?? null,
+            chassis: $params['chassis'] ?? null,
+            search: $params['search'] ?? null,
+            voyage: $params['voyage'] ?? null,
+            photos: $params['photos'] ?? null,
+            on_yard: $params['on_yard'] ?? null,
+            sort: $params['sort'] ?? null,
+            per_page: $params['per_page'] ?? null,
+            page: $params['page'] ?? null,
         );
     }
 
@@ -375,21 +377,42 @@ class Shipping
         $responses = [];
         $ok = true;
 
-        $chunks = array_chunk($items, 100);
+        $serialized = null;
+        $userId = null;
 
-        foreach ($chunks as $chunk) {
+        if ($onResolve !== null) {
+            $closure = $onResolve instanceof Closure
+                ? $onResolve
+                : function () use ($onResolve) {
+                    return ($onResolve)(...func_get_args());
+                };
+            $serialized = serialize(new SerializableClosure($closure));
+            $userId = auth()->id();
+        }
+
+        foreach (array_chunk($items, 100) as $chunk) {
             try {
                 $response = $apiCall($chunk);
                 $responses[] = $response;
 
                 $decoded = $this->decodeResponse($response);
+                $chunkErrors = ! empty($decoded['errors']) ? $decoded['errors'] : [];
+                $errors = array_merge($errors, $chunkErrors);
 
                 if (isset($decoded['jobId'])) {
                     $jobIds[] = $decoded['jobId'];
-                }
 
-                if (! empty($decoded['errors'])) {
-                    $errors = array_merge($errors, $decoded['errors']);
+                    // stored at once: the job can finish and send its webhook while the next chunks still upload
+                    if ($serialized !== null) {
+                        WebhookJob::create([
+                            'job_id' => $decoded['jobId'],
+                            'user_id' => $userId,
+                            'method' => $method,
+                            'callable' => $serialized,
+                            'errors' => $chunkErrors ?: null,
+                            'status' => WebhookJob::STATUS_PENDING,
+                        ]);
+                    }
                 }
             } catch (ApiException $e) {
                 $ok = false;
@@ -404,27 +427,6 @@ class Shipping
                 }
 
                 $responses[] = $body;
-            }
-        }
-
-        if ($onResolve !== null && ! empty($jobIds)) {
-            $closure = $onResolve instanceof Closure
-                ? $onResolve
-                : function () use ($onResolve) {
-                    return ($onResolve)(...func_get_args());
-                };
-            $serialized = serialize(new SerializableClosure($closure));
-            $userId = auth()->id();
-
-            foreach ($jobIds as $jobId) {
-                WebhookJob::create([
-                    'job_id' => $jobId,
-                    'user_id' => $userId,
-                    'method' => $method,
-                    'callable' => $serialized,
-                    'errors' => $errors ?: null,
-                    'status' => WebhookJob::STATUS_PENDING,
-                ]);
             }
         }
 
@@ -483,7 +485,6 @@ class Shipping
      */
     public function getVoyages(array $params = []): mixed
     {
-        // named, as the generated client's parameter order changes between releases
         return $this->voyages()->getVoyages(
             status: $params['status'] ?? null,
             search: $params['search'] ?? null,

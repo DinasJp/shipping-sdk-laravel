@@ -44,4 +44,20 @@ describe('Configuration', function () {
 
         expect($shipping)->toBeInstanceOf(Shipping::class);
     });
+
+    it('takes timeout and debug as env() gives them, strings', function () {
+        config(['dinas-shipping-sdk.timeout' => '60', 'dinas-shipping-sdk.debug' => '1']);
+        app()->forgetInstance(Shipping::class);
+
+        expect(app(Shipping::class)->getConfiguration()->getDebug())->toBeTrue();
+    });
+
+    it('keeps the token and host of each client apart', function () {
+        $a = new Shipping('token-a', 'https://a.example.com');
+        $b = new Shipping('token-b', 'https://b.example.com');
+
+        expect($a->getConfiguration()->getAccessToken())->toBe('token-a')
+            ->and($a->getConfiguration()->getHost())->toBe('https://a.example.com')
+            ->and($b->getConfiguration()->getAccessToken())->toBe('token-b');
+    });
 });

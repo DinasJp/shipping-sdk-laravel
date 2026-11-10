@@ -20,6 +20,17 @@ beforeEach(function () {
     ]);
 });
 
+/**
+ * The given params as positional args in the order of the installed SDK method, which changes between releases.
+ */
+function sdkArgs(string $class, string $method, array $given): array
+{
+    return array_map(
+        fn (ReflectionParameter $p) => $given[$p->getName()] ?? null,
+        (new ReflectionMethod($class, $method))->getParameters(),
+    );
+}
+
 describe('Shipping Class Initialization', function () {
     it('can be instantiated', function () {
         $shipping = new Shipping;
@@ -129,32 +140,7 @@ describe('Cars API Methods', function () {
         $carsPaginated->shouldReceive('getData')->andReturn([]);
         $carsPaginated->shouldReceive('getVoyages')->andReturn([]);
 
-        $carsApi->shouldReceive('getCars')
-            ->once()
-            ->with(
-                'pending',
-                'ABC123',
-                'Toyota',
-                'JPYOK',
-                'VES001',
-                'used',
-                'sedan',
-                true,
-                true,
-                true,
-                'fob',
-                '-id',
-                50,
-                1
-            )
-            ->andReturn($carsPaginated);
-
-        $reflection = new ReflectionClass($shipping);
-        $property = $reflection->getProperty('carsApi');
-        $property->setAccessible(true);
-        $property->setValue($shipping, $carsApi);
-
-        $shipping->getCars([
+        $given = [
             'status' => 'pending',
             'chassis' => 'ABC123',
             'search' => 'Toyota',
@@ -169,7 +155,19 @@ describe('Cars API Methods', function () {
             'sort' => '-id',
             'per_page' => 50,
             'page' => 1,
-        ]);
+        ];
+
+        $carsApi->shouldReceive('getCars')
+            ->once()
+            ->with(...sdkArgs(CarsApi::class, 'getCars', $given))
+            ->andReturn($carsPaginated);
+
+        $reflection = new ReflectionClass($shipping);
+        $property = $reflection->getProperty('carsApi');
+        $property->setAccessible(true);
+        $property->setValue($shipping, $carsApi);
+
+        $shipping->getCars($given);
 
         expect(true)->toBeTrue();
     });
@@ -318,8 +316,21 @@ describe('Photos API Methods', function () {
         $shipping = new Shipping;
         $photosApi = Mockery::mock(CarPhotosApi::class);
 
+        $given = [
+            'status' => 'ready',
+            'chassis' => 'ABC123',
+            'search' => 'Toyota',
+            'voyage' => 'VES001',
+            'photos' => true,
+            'on_yard' => false,
+            'sort' => '-id',
+            'per_page' => 50,
+            'page' => 2,
+        ];
+
         $photosApi->shouldReceive('getCarPhotos')
             ->once()
+            ->with(...sdkArgs(CarPhotosApi::class, 'getCarPhotos', $given))
             ->andReturn(['data' => []]);
 
         $reflection = new ReflectionClass($shipping);
@@ -327,10 +338,7 @@ describe('Photos API Methods', function () {
         $property->setAccessible(true);
         $property->setValue($shipping, $photosApi);
 
-        $shipping->getCarPhotos([
-            'chassis' => 'ABC123',
-            'voyage' => 'VES001',
-        ]);
+        $shipping->getCarPhotos($given);
 
         expect(true)->toBeTrue();
     });
@@ -439,7 +447,6 @@ describe('Voyages API Methods', function () {
         $shipping = new Shipping;
         $voyagesApi = Mockery::mock(VoyagesApi::class);
 
-        // expected in the order of the installed SDK signature, which changes between releases
         $given = [
             'status' => 'pending',
             'search' => 'abc',
@@ -449,14 +456,9 @@ describe('Voyages API Methods', function () {
             'per_page' => 25,
             'page' => 1,
         ];
-        $expected = array_map(
-            fn ($p) => $given[$p->getName()] ?? null,
-            (new ReflectionMethod(VoyagesApi::class, 'getVoyages'))->getParameters(),
-        );
-
         $voyagesApi->shouldReceive('getVoyages')
             ->once()
-            ->with(...$expected)
+            ->with(...sdkArgs(VoyagesApi::class, 'getVoyages', $given))
             ->andReturn(['data' => []]);
 
         $reflection = new ReflectionClass($shipping);
