@@ -472,14 +472,26 @@ class Shipping
     /**
      * Get paginated list of voyages.
      *
-     * @param  array<string, mixed>  $params  Optional query parameters
+     * @param  array<string, mixed>  $params  Optional query parameters:
+     *                                        - status: Filter by voyage status
+     *                                        - search: Search voyages
+     *                                        - from_country: Filter by country of the port of loading (e.g. JP)
+     *                                        - to_country: Filter by country of the port of discharge (e.g. CN)
+     *                                        - sort: Sort field. Prefix with - for descending
+     *                                        - per_page: Number of items per page
+     *                                        - page: Page number
      */
     public function getVoyages(array $params = []): mixed
     {
+        // named, as the generated client's parameter order changes between releases
         return $this->voyages()->getVoyages(
-            $params['sort'] ?? null,
-            $params['per_page'] ?? null,
-            $params['page'] ?? null,
+            status: $params['status'] ?? null,
+            search: $params['search'] ?? null,
+            from_country: $params['from_country'] ?? null,
+            to_country: $params['to_country'] ?? null,
+            sort: $params['sort'] ?? null,
+            per_page: $params['per_page'] ?? null,
+            page: $params['page'] ?? null,
         );
     }
 

@@ -439,9 +439,24 @@ describe('Voyages API Methods', function () {
         $shipping = new Shipping;
         $voyagesApi = Mockery::mock(VoyagesApi::class);
 
+        // expected in the order of the installed SDK signature, which changes between releases
+        $given = [
+            'status' => 'pending',
+            'search' => 'abc',
+            'from_country' => 'JP',
+            'to_country' => 'CN',
+            'sort' => '-id',
+            'per_page' => 25,
+            'page' => 1,
+        ];
+        $expected = array_map(
+            fn ($p) => $given[$p->getName()] ?? null,
+            (new ReflectionMethod(VoyagesApi::class, 'getVoyages'))->getParameters(),
+        );
+
         $voyagesApi->shouldReceive('getVoyages')
             ->once()
-            ->with('-id', 25, 1)
+            ->with(...$expected)
             ->andReturn(['data' => []]);
 
         $reflection = new ReflectionClass($shipping);
@@ -449,13 +464,7 @@ describe('Voyages API Methods', function () {
         $property->setAccessible(true);
         $property->setValue($shipping, $voyagesApi);
 
-        $shipping->getVoyages([
-            'sort' => '-id',
-            'per_page' => 25,
-            'page' => 1,
-        ]);
-
-        expect(true)->toBeTrue();
+        $shipping->getVoyages($given);
     });
 
     it('calls getVoyage with voyage identifier', function () {

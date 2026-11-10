@@ -392,6 +392,11 @@ use Dinas\Shipping\Facades\Shipping;
 
 // Get all voyages
 $voyages = Shipping::getVoyages([
+    'status' => 'pending',
+    'search' => 'abc',
+    'from_country' => 'JP',
+    'to_country' => 'CN',
+    'sort' => '-id',
     'per_page' => 25,
     'page' => 1,
 ]);
